@@ -20,7 +20,7 @@ router.post("/", async (req, res) => {
   try {
     const policyholder = await PolicyHolder.findOne({ email });
     if (policyholder) {
-      return res.status(404).send("User Already register");
+      return res.status(404).json("User Already register");
     }
     if (!policyholder) {
       const policyholder = new PolicyHolder({
@@ -37,7 +37,7 @@ router.post("/", async (req, res) => {
       });
 
       await policyholder.save();
-      return res.status(200).send(policyholder);
+      return res.status(200).json(policyholder);
     }
   } catch (error) {
     console.log(error);
@@ -48,7 +48,7 @@ router.post("/", async (req, res) => {
 router.get("/", async (req, res) => {
   try {
     const policyholder = await PolicyHolder.find();
-    return res.status(200).send(policyholder);
+    return res.status(200).json(policyholder);
     // const firstName = policyholder.map((item, index) => {
     //   return item.insuredFirstName;
     // });
@@ -65,9 +65,9 @@ router.get("/:id", async (req, res) => {
   try {
     const policyholder = await PolicyHolder.findById(id);
     if (!policyholder) {
-      return res.status(404).send("Policyholder not found");
+      return res.status(404).json("Policyholder not found");
     }
-    return res.status(200).send(policyholder);
+    return res.status(200).json(policyholder);
   } catch (error) {
     console.log(error);
   }
@@ -109,7 +109,7 @@ router.put("/:id", async (req, res) => {
       { new: true }
     );
 
-    return res.status(200).send(policyholder);
+    return res.status(200).json(policyholder);
   } catch (error) {
     console.log(error);
   }
@@ -122,9 +122,71 @@ router.delete("/:id", async (req, res) => {
   try {
     const policyholder = await PolicyHolder.findByIdAndDelete(id);
 
-    return res.status(200).send("Data deleted successfully");
+    return res.status(200).json("Data deleted successfully");
   } catch (error) {
     console.log(error);
+  }
+});
+
+//Find policy holder by insuredFirstName
+
+router.get("/search/:firstName", async (req, res) => {
+  const firstName = req.params.firstName;
+
+  try {
+    const policyholder = await PolicyHolder.find({
+      insuredFirstName: { $regex: new RegExp(firstName, "i") },
+    });
+
+    if (!policyholder) {
+      return res.status(404).json({ message: "Policyholder not found" });
+    }
+
+    res.status(200).json(policyholder);
+  } catch (error) {
+    console.error("Error finding policyholder:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+//Find policy holder by Status
+router.get("/search/status/:status", async (req, res) => {
+  const status = req.params.status;
+
+  try {
+    const policyholder = await PolicyHolder.find({
+      Status: status,
+    });
+
+    if (!policyholder) {
+      return res.status(404).json({ message: "Policyholder not found" });
+    }
+
+    res.status(200).json(policyholder);
+  } catch (error) {
+    console.error("Error finding policyholder:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.delete("/deleteByA", async (req, res) => {
+  try {
+    const result = await PolicyHolder.deleteMany({
+      insuredFirstName: { $regex: /^A/i },
+    });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).send({
+        message: "No Policyholders with names starting with letter A found",
+      });
+    }
+
+    res.status(200).send({
+      message: `Deleted ${result.deletedCount} Policyholders with names starting with letter A`,
+    });
+  } catch (error) {
+    console.error("Error deleting policyholders:", error);
+    res.status(500).send({ message: "Server error" });
   }
 });
 
